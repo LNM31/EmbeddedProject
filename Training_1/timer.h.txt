@@ -1,0 +1,21 @@
+void timer_init ( unsigned int period, unsigned int power_of_4, unsigned int mode_selector )
+{
+	// value = 0X5A00; // pentru o perioada de 100 ms
+	
+	// unsigned int value = ( unsigned int ) period;
+	unsigned int value = period;
+	
+	OCR1AH = ( value >> 8 ) & 0XFF;
+	OCR1AL = value & 0XFF;
+	
+	TCCR1B |= power_of_4;
+	TCCR1B |= mode_selector; 
+}
+
+void interrupt_init ( unsigned int period, unsigned int power_of_4, unsigned int mode_selector )
+{
+	sei(); // enable ATMEGA global interrupts
+	// cli(); // disable ATMEGA global interrupts
+	TIMSK |= ( 1 << OCIE1A );
+	timer_init ( period, power_of_4, mode_selector );
+}

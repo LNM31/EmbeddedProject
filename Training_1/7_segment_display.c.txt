@@ -1,0 +1,48 @@
+/*
+ * GccApplication1.c
+ *
+ * Created: 05.12.2024 13:01:19
+ * Author : dspproject
+ */ 
+
+#define F_CPU 14745600UL
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+
+#include "7_segment_display.h"
+#include "timer.h"
+
+
+void setup()
+{
+	init_digit();
+	interrupt_init ( ( unsigned	int ) ( 0X5A00 * 2.5 ), 1 << CS12, 1 << WGM12 );
+}
+
+ISR ( TIMER1_COMPA_vect )
+{
+	static uint8_t digit = 0;
+	
+	display_digit ( digit++ );
+	
+	digit %= 10;
+}
+
+int main(void)
+{
+    setup();
+	
+	// uint8_t digit = 0;
+	
+    while (1) 
+    {
+		/*
+		_delay_ms ( 1000 );
+		display_digit ( digit );
+		digit = ( digit + 1 ) % 10;
+		*/
+    }
+}
+

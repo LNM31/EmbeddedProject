@@ -1,0 +1,74 @@
+/*
+ * GccApplication4.c
+ *
+ * Created: 02.12.2024 10:57:59
+ * Author : dspproject
+ */ 
+
+#define F_CPU 14745600UL
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+
+
+void led_on ( uint8_t poz )
+{
+	PORTB |= ( 1 << poz );
+}
+
+void led_off ( uint8_t poz )
+{
+	PORTB &= ~( 1 << poz );
+}
+
+void led_toogle( uint8_t poz )
+{
+	if ( ( PORTB & ( 1 << poz ) ) == 0 )
+	{
+		led_on ( poz );
+		return;
+	}
+	led_off ( poz );
+}
+
+void led_init ( uint8_t poz )
+{
+	DDRB = 0;
+	DDRB |= ( 1 << poz );
+	
+	led_off ( poz );
+}
+
+void timer_init()
+{
+	unsigned int value = 0X5A00 * 2.5;
+	
+	OCR1AH = ( value >> 8 ) & 0XFF;
+	OCR1AL = value & 0XFF;
+	
+	TCCR1A = 4; // CTC mode
+	TCCR1B = 3; // select freq divider ( value 64 )
+}
+
+void setup()
+{
+	led_init ( 0 );
+	timer_init();
+}
+
+int main(void)
+{
+    setup();
+    while (1) 
+    {
+		if ( ( TIFR & ( 1 << 4 ) ) != 0 )
+		{
+			led_toogle ( 0 );
+			
+			TIFR |= 1 << 4;
+			// TIFR &= ~( 1 << 4 );
+		}
+    }
+}
+

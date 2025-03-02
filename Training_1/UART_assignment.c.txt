@@ -1,0 +1,146 @@
+/*
+ * GccApplication2.c
+ *
+ * Created: 05.12.2024 14:28:45
+ * Author : dspproject
+ */ 
+
+#define F_CPU 14745600UL
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+
+#include "led.h"
+#include "timer.h"
+#include "7_segment_display.h"
+
+#include <string.h>
+
+/* am calculat de mana pentru valorile astea
+#define F_OSC 8000000
+#define BAUD 9600
+#define MY_UBRR ( F_OSC / ( 16 * BAUD ) - 1 )
+*/
+
+// #define MY_UBRR 95 // se calculeaza F_OSC ca fiind F_CPU, nu ce e pe lab
+#define MY_UBRR 7
+
+#define LED 0
+
+
+const char str_to_send[] = "Ana are mere";
+
+uint8_t UDR_RXC_DATA;
+uint8_t data_received;
+
+void USART_INIT ( unsigned int ubrr )
+{
+	/* Set baud rate */
+	UCSRC = 0;
+	UBRRH = ( uint8_t ) ( ( ubrr >> 8 ) & 0XFF ); // 2nd byte // MSB
+	UBRRL = ( uint8_t ) ( ubrr & 0XFF ); // 1st byte // LSB
+	/* Enable receiver and transmitter */
+	UCSRB |= ( 1 << RXEN ) | ( 1 << TXEN ); // | ( 1 << UCSZ2 ); // UCSZ2 e in UCSRB, UCSZ1:0 sunt in UCSRC // le seteaza
+	UCSRC |= ( 1 << URSEL ) | ( 1 << UCSZ1 ) | ( 1 << UCSZ0 ); // & ~( 1 << URSEL ); // enable UCSRC // seteaza message_size pe 8 bits ( 5 + 3 ) // disable UCSRC
+	/* Set frame format: 8data, 2stop bit */
+	// UCSRC = (1<<URSEL)|(1<<USBS)|(3<<UCSZ0); // ( momentan ) nu e nevoie de UCSRC
+	
+	// set USART interrupt
+	
+	UCSRB |= ( 1 << RXCIE );
+}
+
+void UART_init()
+{
+	DDRD |= ( 1 << 1 ); // input e default;
+	
+	USART_INIT ( MY_UBRR );
+}
+
+void setup()
+{
+	led_init ( LED );
+	UART_init();
+	init_digit();
+	// interrupt_init ( 0X5A00 * 2.5, 4, 1 << WGM12 );
+	sei(); // enable ATMEGA global interrupts
+}
+
+void transmission ( const unsigned char ch )
+{
+	// while ( ( UCSRA >> UDRE ) & 1 == 0 ); // nu merge, dureaza prea mult sa faca comparatia ( sau ramane blocat )
+	while ( ! ( UCSRA & ( 1 << UDRE ) ) ); // wait to empty UDR ( UART payload register )
+	
+	UDR = ch;
+}
+
+void string_transmission ( const char *str )
+{
+	unsigned int len = strlen ( str ) + 1;
+		
+	for ( unsigned int i = 0; i < len; i++ )
+		transmission ( str[i] );
+}
+
+uint8_t reception()
+{
+	while ( !( UCSRA & ( 1 << RXC ) ) ); // wait to receive data
+	
+	return UDR;
+}
+
+ISR ( TIMER1_COMPA_vect )
+{
+	// led_toogle ( LED );
+	
+	string_transmission ( "Ana are mere" );
+	// transmission ( 'a' );
+}
+
+ISR ( USART_RXC_vect )
+{
+	data_received = 1;
+}
+
+int main(void)
+{
+	setup();
+	
+	uint8_t i = 0;
+	data_received = 0;
+	
+    while (1) 
+    {
+	    if ( data_received )
+	    {
+			i &= 0xF;
+			display_digit ( i++ );
+			// _delay_ms ( 1000 );
+			
+			data_received = 0;
+		}
+		
+		/*
+		if ( data_received )
+		{
+			UDR_RXC_DATA = reception();
+			
+			uint8_t digit = UDR_RXC_DATA;
+			display_digit ( digit );
+			
+			transmission ( UDR_RXC_DATA );
+			// display_digit ( UDR_RXC_DATA & 0xF );
+			
+			data_received = 1 - data_received;
+		}
+		*/
+		
+		// unsigned char ch = reception();
+		// transmission ( ch );
+		
+		// _delay_ms ( 100 );
+		// string_transmission ( "Ana are mere" );
+    }
+}
+

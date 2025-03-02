@@ -1,0 +1,29 @@
+// momentan compatibil doar cu PORT-ul B
+
+void led_on ( uint8_t poz )
+{
+	PORTB |= ( 1 << poz );
+}
+
+void led_off ( uint8_t poz )
+{
+	PORTB &= ~( 1 << poz );
+}
+
+void led_toogle( uint8_t poz )
+{
+	if ( ( PORTB & ( 1 << poz ) ) == 0 )
+	{
+		led_on ( poz );
+		return;
+	}
+	led_off ( poz );
+}
+
+void led_init ( uint8_t poz )
+{
+	DDRB = 0;
+	DDRB |= ( 1 << poz );
+	
+	led_off ( poz );
+}

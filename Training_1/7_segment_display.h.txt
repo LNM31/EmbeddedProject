@@ -1,0 +1,40 @@
+// momentan compatibil doar cu PORT-ul A
+
+#include <stdint.h>
+
+static const uint8_t digitmap[16] =
+{
+	0xC0, // 0
+	0xF9, // 1
+	0xA4, // 2
+	0xB0, // 3
+	0x99, // 4
+	0x92, // 5
+	0x82, // 6
+	0xF8, // 7
+	0x00, // 8
+	0x90, // 9
+	0x88, // A
+	0x83, // B
+	0xC6, // C
+	0xA1, // D
+	0x86, // E
+	0x8E  // F
+ };
+
+ void clear_digit ( void ) // clear the digit on the module
+ {
+	 PORTA |= ~( 1 << 7 );
+ }
+ 
+void init_digit ( void ) // initialize the port lines
+{
+	DDRA = ~( 1 << 7 );
+	
+	clear_digit();
+}
+
+void display_digit ( uint8_t digit ) // display the digit given as parameter
+{
+	PORTA = digitmap[digit];
+}

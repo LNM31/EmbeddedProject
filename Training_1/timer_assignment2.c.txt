@@ -1,0 +1,109 @@
+/*
+ * GccApplication4.c
+ *
+ * Created: 02.12.2024 10:57:59
+ * Author : dspproject
+ */ 
+
+#define F_CPU 14745600UL
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+// #include <iom16.h>
+
+
+void led_on ( uint8_t poz )
+{
+	PORTB |= ( 1 << poz );
+}
+
+void led_off ( uint8_t poz )
+{
+	PORTB &= ~( 1 << poz );
+}
+
+void led_toogle( uint8_t poz )
+{
+	if ( ( PORTB & ( 1 << poz ) ) == 0 )
+	{
+		led_on ( poz );
+		return;
+	}
+	led_off ( poz );
+}
+
+void led_init ( uint8_t poz )
+{
+	DDRB = 0;
+	DDRB |= ( 1 << poz );
+	
+	led_off ( poz );
+}
+
+void timer_init()
+{
+	/*
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	
+	aparent se modifica frecventa din valoarea lui value, doar ca se observa greu ( prea greu pentru valorile selectate )
+	
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	*/
+	unsigned int value;
+	value = 0X5A00 * 2.5; // nu influenteaza perioada
+	// value = 0X5A00; // nu influenteaza perioada
+	// value = 0XFFFF; // nu influenteaza perioada
+	// value = 0X0FFF; // nu influenteaza perioada
+	// value = 1; // asa se modifica frecventa ( vizual ramane aprins )
+	// value = 2; // arata la fel
+	
+	OCR1AH = ( value >> 8 ) & 0XFF;
+	OCR1AL = value & 0XFF;
+	
+	TCCR1B |= ( 1 << CS11 );
+	TCCR1B |= ( 1 << CS10 ); // select freq divider ( value 64 ) // influenteaza perioada
+	TCCR1B |= ( 1 << WGM12 );
+	TCCR1A |= ( 1 << FOC1A ); // nu schimba nimic
+	
+	// TCCR1A = 12; // CTC mode TOP ==ICR1
+	// TCCR1A = 4; // CTC mode TOP == OCR1A
+	// TCCR1B = 3; // select freq divider ( value 64 ) // influenteaza perioada
+}
+
+void interrupt_init()
+{
+	sei(); // enable ATMEGA global interrupts
+	// cli(); // disable ATMEGA global interrupts
+	TIMSK |= ( 1 << OCIE1A );
+}
+
+void setup()
+{
+	interrupt_init();
+	led_init ( 0 );
+	timer_init();
+}
+
+ISR ( TIMER1_COMPA_vect )
+{
+	led_toogle ( 0 );
+}
+
+int main(void)
+{
+    setup();
+    while (1) 
+    {
+		/*
+		if ( ( TIFR & ( 1 << 4 ) ) != 0 )
+		{
+			led_toogle ( 0 );
+			
+			TIFR |= 1 << 4;
+			// TIFR &= ~( 1 << 4 );
+		}
+		*/
+    }
+}
+
